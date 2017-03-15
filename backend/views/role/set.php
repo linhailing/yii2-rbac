@@ -7,7 +7,7 @@
 use yii\helpers\Html;
 use backend\services\StaticService;
 use backend\services\UrlService;
-use yii\web\AppAsset;
+use backend\assets\AppAsset;
 StaticService::includeAppJsStatic('/js/role/set.js', AppAsset::className());
 ?>
 <div class="row">

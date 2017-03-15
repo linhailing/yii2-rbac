@@ -22,7 +22,7 @@ class AppAsset extends AssetBundle
         'yii\bootstrap\BootstrapAsset',
     ];
     public function registerAssetFiles( $view ){
-        $v = '20170311';
+        $v = '2017031';
         $this->css = [
             UrlService::buildUrl( 'bootstrap/css/bootstrap.min.css?', [ 'v' => $v ]),
             UrlService::buildUrl( 'bootstrap/css/app.css', [ 'v' => $v ])

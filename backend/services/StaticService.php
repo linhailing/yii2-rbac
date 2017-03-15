@@ -17,7 +17,7 @@ class StaticService{
 	 */
 	public static function includeAppStatic($type, $path, $depend){
 		//版本号就是为了解决浏览器缓存的
-        $release_version = defined("RELEASE_VERSION") ? RELEASE_VERSION : "20170312";
+        $release_version = defined("RELEASE_VERSION") ? RELEASE_VERSION : "20170315";
         if (stripos($path, "?") !== false) {
             $path = $path . "&version={$release_version}";
         } else {
