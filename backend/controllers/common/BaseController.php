@@ -7,6 +7,9 @@ namespace backend\controllers\common;
 use Yii;
 use yii\web\Controller;
 use common\models\User;
+use common\models\UserRole;
+use common\models\RoleAccess;
+use common\models\Access;
 use backend\services\UrlService;
 /**
  *  BaseController 
@@ -17,10 +20,12 @@ class BaseController extends Controller{
 	protected $current_user = null;
 
 	protected $allowAllAction = [
-		'user/login',
-		'user/vlogin'
+		'user/login'
 	];
-
+	protected $ignore_url =[
+		'error/forbidden',
+		'user/login'
+	];
 	//init
 	public function beforeAction($action){
 		$login_status = $this->checkLoginStatus();
@@ -32,10 +37,67 @@ class BaseController extends Controller{
 			}
 			return false;
 		}
+		/**
+		 * 判断权限的逻辑是
+		 * 取出当前登录用户的所属角色，
+		 * 在通过角色 取出 所属 权限关系
+		 * 在权限表中取出所有的权限链接
+		 * 判断当前访问的链接 是否在 所拥有的权限列表中
+		 */
+		//判断当前访问的链接 是否在 所拥有的权限列表中
+		if(!$this->checkPrivilege($action->getUniqueId())){
+			$this->redirect(UrlService::buildUrl('error/forbidden'));
+			return false;
+		}
+		
 		return true;
 
 	}
 
+	//检查是否有访问指定链接的权限
+	protected function checkPrivilege($url){
+		//如果是超级管理员 也不需要权限判断
+		if( $this->current_user && $this->current_user['is_admin']){
+			return true;
+		}
+		//echo $url;
+		//exit();
+		//有一些页面是不需要进行权限判断的
+		if(in_array($url, $this->ignore_url)){
+			return true;
+		}
+		return in_array($url, $this->getRolePrivilege());
+	}
+
+	/*
+	* 获取某用户的所有权限
+	* 取出指定用户的所属角色，
+	* 在通过角色 取出 所属 权限关系
+	* 在权限表中取出所有的权限链接
+	*/
+	protected function getRolePrivilege( $uid =0){
+		if(!$uid && $this->current_user){
+			$uid = $this->current_user->id;
+		}
+		$privilege_urls = [];
+		//取出指定用户的所属角色
+		$role_ids = UserRole::find()->where( ['uid' => $uid])->select('role_id')->asArray()->column();
+		if($role_ids){
+			//在通过角色 取出 所属 权限关系
+			$access_ids = RoleAccess::find()->where( ['role_id' =>$role_ids ] )->select('access_id')->asArray()->column();
+			//在权限表中取出所有的权限链接
+			$list = Access::find()->where( ['id' => $access_ids ] )->all();
+			// urls json
+			if($list){
+				foreach ($list as $_items) {
+					$tmp_urls = @json_decode($_items['urls'], true);
+					$privilege_urls = array_merge($privilege_urls, $tmp_urls);
+				}
+			}
+		}
+		return $privilege_urls;
+
+	}
 	// return true or false
 	protected function checkLoginStatus(){
 		$request = Yii::$app->request;
